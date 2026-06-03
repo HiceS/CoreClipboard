@@ -71,7 +71,7 @@ The build script signs the staged `.app` bundle after generating `Info.plist`.
 Example:
 
 ```bash
-SIGN_IDENTITY="Developer ID Application: SHAWN (xcxadca)" \
+SIGN_IDENTITY="Developer ID Application: SHAWN MICHAEL HICE (VY262TJ9SZ)" \
 ./script/build_and_run.sh --bundle
 ```
 
@@ -90,27 +90,27 @@ spctl -a -vvv -t exec dist/CoreClipboard.app
 
 ## DMG Packaging
 
-Build a signed app bundle first, then create and sign the DMG:
+Use the release script to build, sign, notarize, staple, and validate the DMG:
 
 ```bash
-SIGN_IDENTITY="Developer ID Application: SHAWN (xcxadca)" \
-./script/build_and_run.sh --bundle
-
-rm -rf dist/dmg-staging
-mkdir -p dist/dmg-staging
-cp -R dist/CoreClipboard.app dist/dmg-staging/
-ln -s /Applications dist/dmg-staging/Applications
-
-hdiutil create -volname CoreClipboard \
-  -srcfolder dist/dmg-staging \
-  -ov -format UDZO dist/CoreClipboard.dmg
-
-codesign --force --timestamp \
-  --sign "Developer ID Application: SHAWN (xcxadca)" \
-  dist/CoreClipboard.dmg
+./script/build_release_dmg.sh
 ```
 
-Validate the signed DMG:
+Optional overrides:
+
+```bash
+SIGN_IDENTITY="Developer ID Application: SHAWN MICHAEL HICE (VY262TJ9SZ)" \
+NOTARY_PROFILE="coreclipboard-notary" \
+./script/build_release_dmg.sh
+```
+
+Skip notarization when you only want a locally signed DMG:
+
+```bash
+./script/build_release_dmg.sh --skip-notarize
+```
+
+Validate the signed DMG manually:
 
 ```bash
 spctl -a -vvv -t open --context context:primary-signature dist/CoreClipboard.dmg
@@ -134,7 +134,7 @@ If this machine already has an older profile like `clipboardbar-notary`, you
 can either keep using it or store the same credentials again under the new
 `coreclipboard-notary` name.
 
-Submit the signed DMG and wait for the result:
+If you need to submit manually instead of using the release script:
 
 ```bash
 xcrun notarytool submit dist/CoreClipboard.dmg \

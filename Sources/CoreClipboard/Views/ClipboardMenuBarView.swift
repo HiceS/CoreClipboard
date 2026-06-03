@@ -35,6 +35,11 @@ struct ClipboardMenuBarView: View {
             Divider()
 
             HStack {
+                Button("Clear") {
+                    monitor.clearHistory()
+                }
+                .disabled(viewState.history.isEmpty)
+
                 Button("Refresh") {
                     monitor.refreshSnapshot()
                 }

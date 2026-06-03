@@ -49,6 +49,44 @@ final class ClipboardHistoryTests: XCTestCase {
         XCTAssertEqual(history.latestItem?.capturedAt, duplicate.capturedAt)
     }
 
+    func testHistoryCanBeCleared() {
+        var history = ClipboardHistory(
+            limit: 4,
+            items: [
+                ClipboardItem(content: .text("first"), capturedAt: .now),
+                ClipboardItem(content: .text("second"), capturedAt: .now.addingTimeInterval(1))
+            ]
+        )
+
+        history.clear()
+
+        XCTAssertTrue(history.isEmpty)
+        XCTAssertNil(history.latestItem)
+        XCTAssertTrue(history.items.isEmpty)
+    }
+
+    func testHistoryResizesWhenLimitChanges() {
+        let history = ClipboardHistory(
+            limit: 4,
+            items: [
+                ClipboardItem(content: .text("first"), capturedAt: .now.addingTimeInterval(2)),
+                ClipboardItem(content: .text("second"), capturedAt: .now.addingTimeInterval(1)),
+                ClipboardItem(content: .text("third"), capturedAt: .now)
+            ]
+        )
+
+        let resized = history.withLimit(2)
+
+        XCTAssertEqual(resized.limit, 2)
+        XCTAssertEqual(resized.items.map(\.content), [.text("first"), .text("second")])
+    }
+
+    func testHistoryLimitClampsIntoSupportedRange() {
+        XCTAssertEqual(ClipboardHistoryLimit.clamp(0), ClipboardHistoryLimit.minimum)
+        XCTAssertEqual(ClipboardHistoryLimit.clamp(99), ClipboardHistoryLimit.maximum)
+        XCTAssertEqual(ClipboardHistoryLimit.clamp(12), 12)
+    }
+
     func testImagePreviewUsesPixelDimensions() {
         let item = ClipboardItem(
             content: .image(ClipboardImageData(data: Data([0x0]), pixelWidth: 640, pixelHeight: 480)),
@@ -89,5 +127,14 @@ final class ClipboardHistoryTests: XCTestCase {
 
         XCTAssertEqual(item.textAnalysis?.wordCount, 2)
         XCTAssertEqual(item.textAnalysis?.characterCount, 11)
+    }
+
+    func testTextAnalysisDoesNotTreatMultiTokenTextAsURL() {
+        let item = ClipboardItem(
+            content: .text("https://example.com some extra context"),
+            capturedAt: .now
+        )
+
+        XCTAssertNil(item.textAnalysis?.detectedURL)
     }
 }

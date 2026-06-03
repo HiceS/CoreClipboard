@@ -15,7 +15,7 @@ final class ClipboardMonitor: ObservableObject {
     init(
         pasteboard: NSPasteboard = .general,
         pollInterval: TimeInterval = 0.5,
-        historyLimit: Int = 12
+        historyLimit: Int = ClipboardHistoryLimit.defaultValue
     ) {
         self.pasteboard = pasteboard
         self.pollInterval = pollInterval
@@ -31,6 +31,14 @@ final class ClipboardMonitor: ObservableObject {
 
     func refreshSnapshot() {
         captureCurrentClipboardIfPossible()
+    }
+
+    func clearHistory() {
+        history.clear()
+    }
+
+    func updateHistoryLimit(_ limit: Int) {
+        history = history.withLimit(limit)
     }
 
     func recopy(_ item: ClipboardItem) {

@@ -135,20 +135,21 @@ public struct ClipboardTextAnalysis: Equatable, Sendable {
     }
 
     private static func detectedURL(from text: String) -> URL? {
-        let collapsedWhitespace = text
-            .components(separatedBy: .whitespacesAndNewlines)
-            .filter { !$0.isEmpty }
-            .joined()
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        guard !collapsedWhitespace.isEmpty else {
+        guard !trimmed.isEmpty else {
+            return nil
+        }
+
+        guard trimmed.unicodeScalars.allSatisfy({ !CharacterSet.whitespacesAndNewlines.contains($0) }) else {
             return nil
         }
 
         let candidate: String
-        if collapsedWhitespace.lowercased().hasPrefix("www.") {
-            candidate = "https://\(collapsedWhitespace)"
+        if trimmed.lowercased().hasPrefix("www.") {
+            candidate = "https://\(trimmed)"
         } else {
-            candidate = collapsedWhitespace
+            candidate = trimmed
         }
 
         guard let url = URL(string: candidate),

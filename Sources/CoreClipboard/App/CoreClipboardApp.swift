@@ -1,4 +1,5 @@
 import AppKit
+import Core
 import SwiftUI
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -10,8 +11,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 @main
 struct CoreClipboardApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-    @StateObject private var monitor = ClipboardMonitor(historyLimit: 12)
     @StateObject private var launchAtLoginManager = LaunchAtLoginManager()
+    @StateObject private var monitor: ClipboardMonitor
+
+    init() {
+        let defaults = UserDefaults.standard
+        let storedHistoryLimit = defaults.object(forKey: "historyLimit") as? Int
+        let initialHistoryLimit = ClipboardHistoryLimit.clamp(
+            storedHistoryLimit ?? ClipboardHistoryLimit.defaultValue
+        )
+
+        defaults.register(defaults: ["historyLimit": initialHistoryLimit])
+        _monitor = StateObject(
+            wrappedValue: ClipboardMonitor(historyLimit: initialHistoryLimit)
+        )
+    }
 
     var body: some Scene {
         MenuBarExtra {
@@ -25,7 +39,10 @@ struct CoreClipboardApp: App {
         .menuBarExtraStyle(.window)
 
         Settings {
-            SettingsView(launchAtLoginManager: launchAtLoginManager)
+            SettingsView(
+                launchAtLoginManager: launchAtLoginManager,
+                onHistoryLimitChange: monitor.updateHistoryLimit
+            )
         }
     }
 }
