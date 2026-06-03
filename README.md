@@ -1,5 +1,7 @@
 # CoreClipboard
 
+<img width="480" height="321" alt="Image" src="https://github.com/user-attachments/assets/8ca6190b-f73a-48dc-8fe7-7f9409dbdb79" />
+
 CoreClipboard is a macOS menu bar clipboard utility built as a Swift Package.
 It tracks recent clipboard history for text, images, files, and URLs, and
 provides actions like re-copying, opening URLs, revealing files in Finder, and
