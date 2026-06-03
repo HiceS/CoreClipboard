@@ -71,7 +71,7 @@ The build script signs the staged `.app` bundle after generating `Info.plist`.
 Example:
 
 ```bash
-SIGN_IDENTITY="Developer ID Application: SHAWN MICHAEL HICE (VY262TJ9SZ)" \
+SIGN_IDENTITY="Developer ID Application: YOUR NAME (TEAMID)" \
 ./script/build_and_run.sh --bundle
 ```
 
@@ -99,7 +99,7 @@ Use the release script to build, sign, notarize, staple, and validate the DMG:
 Optional overrides:
 
 ```bash
-SIGN_IDENTITY="Developer ID Application: SHAWN MICHAEL HICE (VY262TJ9SZ)" \
+SIGN_IDENTITY="Developer ID Application: YOUR NAME (TEAMID)" \
 NOTARY_PROFILE="coreclipboard-notary" \
 ./script/build_release_dmg.sh
 ```
@@ -126,7 +126,7 @@ Store notarization credentials in the keychain:
 ```bash
 xcrun notarytool store-credentials "coreclipboard-notary" \
   --apple-id "you@example.com" \
-  --team-id "VY262TJ9SZ" \
+  --team-id "YOURTEAMID" \
   --password "app-specific-password"
 ```
 
@@ -161,7 +161,6 @@ spctl -a -vvv -t exec dist/CoreClipboard.app
 
 - Bundle identifier: `com.hices.CoreClipboard`
 - Minimum system version: `14.0`
-- Team ID: `VY262TJ9SZ`
 - Notarytool keychain profile: recommended `coreclipboard-notary`
 - Signing identity type: `Developer ID Application`
 
