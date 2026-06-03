@@ -71,7 +71,7 @@ The build script signs the staged `.app` bundle after generating `Info.plist`.
 Example:
 
 ```bash
-SIGN_IDENTITY="Developer ID Application: SHAWN MICHAEL HICE (VY262TJ9SZ)" \
+SIGN_IDENTITY="Developer ID Application: SHAWN (xcxadca)" \
 ./script/build_and_run.sh --bundle
 ```
 
@@ -93,7 +93,7 @@ spctl -a -vvv -t exec dist/CoreClipboard.app
 Build a signed app bundle first, then create and sign the DMG:
 
 ```bash
-SIGN_IDENTITY="Developer ID Application: SHAWN MICHAEL HICE (VY262TJ9SZ)" \
+SIGN_IDENTITY="Developer ID Application: SHAWN (xcxadca)" \
 ./script/build_and_run.sh --bundle
 
 rm -rf dist/dmg-staging
@@ -106,7 +106,7 @@ hdiutil create -volname CoreClipboard \
   -ov -format UDZO dist/CoreClipboard.dmg
 
 codesign --force --timestamp \
-  --sign "Developer ID Application: SHAWN MICHAEL HICE (VY262TJ9SZ)" \
+  --sign "Developer ID Application: SHAWN (xcxadca)" \
   dist/CoreClipboard.dmg
 ```
 
