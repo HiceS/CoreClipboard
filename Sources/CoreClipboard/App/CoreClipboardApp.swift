@@ -38,6 +38,11 @@ struct CoreClipboardApp: App {
         }
         .menuBarExtraStyle(.window)
 
+        Window("Clipboard History", id: "clipboard-history") {
+            ClipboardPinnedWindowView(monitor: monitor)
+        }
+        .defaultSize(width: 420, height: 460)
+
         Settings {
             SettingsView(
                 launchAtLoginManager: launchAtLoginManager,

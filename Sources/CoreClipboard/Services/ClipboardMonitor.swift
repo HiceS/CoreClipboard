@@ -47,12 +47,6 @@ final class ClipboardMonitor: ObservableObject {
         }
 
         observedChangeCount = pasteboard.changeCount
-        history.record(
-            ClipboardItem(
-                content: item.content,
-                capturedAt: .now
-            )
-        )
     }
 
     func copyTextToClipboard(_ text: String) {
