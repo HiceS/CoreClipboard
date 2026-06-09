@@ -3,6 +3,7 @@ import Core
 import SwiftUI
 
 struct ClipboardMenuBarView: View {
+    @ObservedObject var appUpdater: AppUpdater
     @ObservedObject var monitor: ClipboardMonitor
     @ObservedObject var launchAtLoginManager: LaunchAtLoginManager
     @Environment(\.openSettings) private var openSettings
@@ -50,12 +51,20 @@ struct ClipboardMenuBarView: View {
 
                 Spacer()
 
-                Button {
-                    openSettingsWindow()
+                Menu {
+                    Button("Settings...") {
+                        openSettingsWindow()
+                    }
+
+                    Button("Check for Updates...") {
+                        appUpdater.checkForUpdates()
+                    }
+                    .disabled(!appUpdater.canCheckForUpdates)
                 } label: {
                     Image(systemName: "gearshape")
                 }
-                .buttonStyle(.plain)
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
                 .help("Settings")
 
                 Button("Quit") {

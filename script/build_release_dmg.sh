@@ -3,15 +3,20 @@ set -euo pipefail
 
 APP_NAME="CoreClipboard"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=script/versioning.sh
+source "$ROOT_DIR/script/versioning.sh"
 DIST_DIR="$ROOT_DIR/dist"
 APP_BUNDLE="$DIST_DIR/$APP_NAME.app"
 DMG_STAGING_DIR="$DIST_DIR/dmg-staging"
-DMG_PATH="$DIST_DIR/$APP_NAME.dmg"
 DEFAULT_SIGN_IDENTITY="Developer ID Application: SHAWN MICHAEL HICE (VY262TJ9SZ)"
 DEFAULT_NOTARY_PROFILE="coreclipboard-notary"
 
 SIGN_IDENTITY="${SIGN_IDENTITY:-$DEFAULT_SIGN_IDENTITY}"
 NOTARY_PROFILE="${NOTARY_PROFILE:-$DEFAULT_NOTARY_PROFILE}"
+APP_VERSION="$(resolve_release_version)"
+BUILD_NUMBER="$(resolve_build_number "$APP_VERSION")"
+DMG_BASENAME="$APP_NAME-$APP_VERSION.dmg"
+DMG_PATH="$DIST_DIR/$DMG_BASENAME"
 
 usage() {
   cat <<EOF
@@ -54,12 +59,13 @@ if [[ "$SKIP_STAPLE" -eq 1 && "$SKIP_NOTARIZE" -eq 0 ]]; then
 fi
 
 echo "==> Building signed app bundle"
-SIGN_IDENTITY="$SIGN_IDENTITY" "$ROOT_DIR/script/build_and_run.sh" --bundle
+APP_VERSION="$APP_VERSION" BUILD_NUMBER="$BUILD_NUMBER" SIGN_IDENTITY="$SIGN_IDENTITY" \
+  "$ROOT_DIR/script/build_and_run.sh" --bundle
 
 echo "==> Packaging DMG"
 rm -rf "$DMG_STAGING_DIR"
 mkdir -p "$DMG_STAGING_DIR"
-cp -R "$APP_BUNDLE" "$DMG_STAGING_DIR/"
+ditto "$APP_BUNDLE" "$DMG_STAGING_DIR/$APP_NAME.app"
 ln -s /Applications "$DMG_STAGING_DIR/Applications"
 rm -f "$DMG_PATH"
 hdiutil create \

@@ -12,7 +12,11 @@ copying file paths.
 - `Sources/CoreClipboard`: macOS app target
 - `packages/core/Sources/Core`: shared clipboard models and analysis helpers
 - `packages/core/Tests/CoreTests`: focused tests for shared clipboard behavior
-- `script/build_and_run.sh`: local build, sign, bundle, and run entrypoint
+- `script/`: build, icon, versioning, release, and publish scripts
+- `CopyIcon.png`: source artwork used to generate the bundled app icon
+- `SPARKLE_PUBLIC_ED_KEY`: public Sparkle EdDSA key embedded in the app bundle
+- `VERSION`: canonical app version used for `Info.plist` and release artifacts
+- `CHANGELOG.md`: source of truth for generated release notes
 - `dist/`: generated app bundle and DMG artifacts
 
 The app target intentionally lives under `Sources/CoreClipboard`. Do not move it
@@ -24,7 +28,9 @@ badly.
 
 - macOS 14+
 - Xcode / Swift toolchain with Swift 6 support
+- `xcrun iconutil` available for icon generation
 - Apple Developer Program enrollment for Developer ID signing and notarization
+- `aws` CLI installed if you want to publish directly to Cloudflare R2 from the scripts
 
 ## Local Development
 
@@ -61,12 +67,38 @@ Useful script modes:
 - `--telemetry`: launch and stream logs filtered by app subsystem
 - `--debug`: launch the bundled binary in `lldb`
 
+Release and packaging scripts:
+
+- `script/generate_app_icon.sh`: convert `CopyIcon.png` into `AppIcon.icns`
+- `script/release_version.sh`: show or bump the semantic version in `VERSION`
+- `script/build_release_dmg.sh`: build, sign, notarize, staple, and validate a versioned DMG
+- `script/generate_release_notes.sh`: derive versioned HTML notes from `CHANGELOG.md`
+- `script/generate_appcast.sh`: sign the DMG and generate `dist/publish/appcast.xml`
+- `script/publish_release_to_r2.sh`: upload the DMG, appcast, and release notes to R2
+- `script/release_and_publish.sh`: orchestrate version bump, release build, metadata generation, and optional upload
+
+Show the current release version and derived build number:
+
+```bash
+./script/release_version.sh show
+```
+
+Bump the release version in `VERSION`:
+
+```bash
+./script/release_version.sh bump patch
+```
+
 ## Signing
 
 The build script signs the staged `.app` bundle after generating `Info.plist`.
+It also generates `AppIcon.icns` from `CopyIcon.png`, embeds `Sparkle.framework`,
+and sets the app icon and Sparkle feed metadata in `Info.plist`.
 
 - Local default: ad-hoc signing via `SIGN_IDENTITY=-`
 - Distribution: set `SIGN_IDENTITY` to a `Developer ID Application` identity
+- Sparkle feed URL defaults to `https://updates.coreclipboard.com/appcast.xml`
+- Sparkle public key is read from `SPARKLE_PUBLIC_ED_KEY`
 
 Example:
 
@@ -113,7 +145,7 @@ Skip notarization when you only want a locally signed DMG:
 Validate the signed DMG manually:
 
 ```bash
-spctl -a -vvv -t open --context context:primary-signature dist/CoreClipboard.dmg
+spctl -a -vvv -t open --context context:primary-signature dist/CoreClipboard-$(cat VERSION).dmg
 ```
 
 If `spctl` reports `Unnotarized Developer ID`, signing is correct and
@@ -137,7 +169,7 @@ can either keep using it or store the same credentials again under the new
 If you need to submit manually instead of using the release script:
 
 ```bash
-xcrun notarytool submit dist/CoreClipboard.dmg \
+xcrun notarytool submit dist/CoreClipboard-$(cat VERSION).dmg \
   --keychain-profile "coreclipboard-notary" \
   --wait
 ```
@@ -145,9 +177,9 @@ xcrun notarytool submit dist/CoreClipboard.dmg \
 Staple and validate after success:
 
 ```bash
-xcrun stapler staple dist/CoreClipboard.dmg
-xcrun stapler validate dist/CoreClipboard.dmg
-spctl -a -vvv -t open --context context:primary-signature dist/CoreClipboard.dmg
+xcrun stapler staple dist/CoreClipboard-$(cat VERSION).dmg
+xcrun stapler validate dist/CoreClipboard-$(cat VERSION).dmg
+spctl -a -vvv -t open --context context:primary-signature dist/CoreClipboard-$(cat VERSION).dmg
 ```
 
 If you want to validate the app bundle directly too:
@@ -163,6 +195,48 @@ spctl -a -vvv -t exec dist/CoreClipboard.app
 - Minimum system version: `14.0`
 - Notarytool keychain profile: recommended `coreclipboard-notary`
 - Signing identity type: `Developer ID Application`
+- Sparkle key account: `coreclipboard`
+- Update feed: `https://updates.coreclipboard.com/appcast.xml`
+
+## Sparkle Publishing
+
+Generate release notes and appcast metadata for the current version:
+
+```bash
+./script/generate_release_notes.sh
+
+./path/to/sign_update --account coreclipboard -x dist/sparkle-private-key.txt
+
+SPARKLE_PRIVATE_KEY_FILE=dist/sparkle-private-key.txt \
+./script/generate_appcast.sh
+
+rm -f dist/sparkle-private-key.txt
+```
+
+`generate_release_notes.sh` does not need the Sparkle private key.
+`generate_appcast.sh` does, because it signs the DMG enclosure for Sparkle.
+
+Run the full release flow and optionally bump the version first:
+
+```bash
+./script/release_and_publish.sh --bump patch --skip-publish
+```
+
+Upload generated outputs with R2 credentials in the environment:
+
+```bash
+R2_BUCKET_NAME="coreclipboard-updates" \
+R2_ACCOUNT_ID="..." \
+R2_ACCESS_KEY_ID="..." \
+R2_SECRET_ACCESS_KEY="..." \
+./script/publish_release_to_r2.sh
+```
+
+Expected bucket keys:
+
+- `appcast.xml`
+- `downloads/CoreClipboard-<version>.dmg`
+- `release-notes/<version>.html`
 
 ## Common Failure Modes
 

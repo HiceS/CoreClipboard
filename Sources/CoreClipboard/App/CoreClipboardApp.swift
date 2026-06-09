@@ -11,6 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 @main
 struct CoreClipboardApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    @StateObject private var appUpdater = AppUpdater()
     @StateObject private var launchAtLoginManager = LaunchAtLoginManager()
     @StateObject private var monitor: ClipboardMonitor
 
@@ -30,6 +31,7 @@ struct CoreClipboardApp: App {
     var body: some Scene {
         MenuBarExtra {
             ClipboardMenuBarView(
+                appUpdater: appUpdater,
                 monitor: monitor,
                 launchAtLoginManager: launchAtLoginManager
             )
